@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="My Cookbook">
+<meta name="apple-mobile-web-app-title" content="Dom's Cookbook">
 <meta name="theme-color" content="#1a1612">
-<title>My Cookbook</title>
+<title>Dom&#39;s Cookbook</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#FAF6F1;--bg-card:#FFF;--text:#1a1612;--text-muted:#8a7e74;--accent:#C4623A;--accent-light:#E8DDD4;--accent-hover:#A84E2B;--border:#E8E0D8;--shadow:0 2px 16px rgba(26,22,18,.06);--radius:16px;--serif:'Playfair Display',Georgia,serif;--sans:'DM Sans',-apple-system,sans-serif;--tab-height:64px;--green:#5a7a64;--green-bg:rgba(90,122,100,.08)}
@@ -193,6 +193,10 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
 .detail-view.open{display:block;animation:fadeUp .3s ease}
 .detail-back,.detail-edit{position:fixed;top:50px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.85);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:none;cursor:pointer;z-index:310;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow)}
 .detail-back{left:16px;font-size:20px}.detail-edit{right:16px;font-size:18px}
+.share-row{display:flex;gap:8px;margin:14px 0 0}
+.share-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;background:var(--bg-card);border:1.5px solid var(--border);border-radius:10px;padding:9px 12px;font-family:var(--sans);font-size:12px;font-weight:500;color:var(--text);cursor:pointer;transition:background .15s,border-color .15s}
+.share-btn:active{background:var(--accent-light);border-color:var(--accent)}
+.share-btn svg{width:13px;height:13px;stroke:var(--text);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .detail-hero{width:100%;aspect-ratio:16/11;object-fit:cover;display:block}
 .detail-hero-placeholder{width:100%;aspect-ratio:16/11;background:linear-gradient(135deg,var(--accent-light),#f0e6dc);display:flex;align-items:center;justify-content:center;font-size:64px;opacity:.5}
 .detail-body{padding:28px 24px 60px}
@@ -251,7 +255,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
 </head>
 <body>
 
-<div class="header"><div class="header-row"><div><h1>My <em>Cookbook</em></h1><div class="subtitle" id="dishCount">0 dishes</div></div><button class="add-btn" onclick="showChoice()">+</button></div></div>
+<div class="header"><div class="header-row"><div><h1>Dom&#39;s <em>Cookbook</em></h1><div class="subtitle" id="dishCount">0 dishes</div></div><button class="add-btn" onclick="showChoice()">+</button></div></div>
 
 <div class="view active" id="viewDishes"><div class="filter-toggle" id="filterToggle"><button class="active" onclick="setFilterMode('meal')">Meal</button><button onclick="setFilterMode('category')">Category</button></div><div class="filters" id="filters"></div><div class="grid" id="grid"></div></div>
 
@@ -286,6 +290,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
 <script>
 var dishes=[],editingId=null,currentPhoto=null,activeFilter='All',filterMode='meal',currentTab='dishes';
 var cookAgainId=null,cookAgainPhoto=null;
+var preparedShareFiles={}; // dishId -> File for image share
 var calYear,calMonth;
 var STORAGE_KEY='cookbook_dishes';
 var now=new Date();calYear=now.getFullYear();calMonth=now.getMonth();
@@ -354,7 +359,7 @@ function selectCookAgain(id){closeOverlay('cookPickerOverlay');cookAgainId=id;co
 
 function handleCookPhoto(input){var file=input.files[0];if(!file)return;var reader=new FileReader();reader.onload=function(e){var img=new Image();img.onload=function(){var c=document.createElement('canvas');var MAX=800;var w=img.width,h=img.height;if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);cookAgainPhoto=c.toDataURL('image/jpeg',.75);renderCookPhotoPreview();};img.src=e.target.result;};reader.readAsDataURL(file);}
 function renderCookPhotoPreview(){var el=document.getElementById('cookPhotoUpload');el.innerHTML=cookAgainPhoto?'<img src="'+cookAgainPhoto+'" alt="Preview"><button class="remove-photo" onclick="event.stopPropagation();cookAgainPhoto=null;document.getElementById(\'cookPhotoInput\').value=\'\';renderCookPhotoPreview()">\u2715</button>':'<div class="upload-icon">&#x1F4F7;</div><div class="upload-text">Tap to add a photo</div>';}
-function saveCookAgain(){if(!cookAgainId)return;var d=dishes.find(function(x){return x.id===cookAgainId;});if(!d)return;d.ingredients=getListValues('cookIngredientsList');d.steps=getListValues('cookStepsList');d.cookLog.push({id:crypto.randomUUID(),date:document.getElementById('cookDate').value,photo:cookAgainPhoto,notes:document.getElementById('cookNotes').value.trim()});saveDishesLS();closeOverlay('cookFormOverlay');renderDishes();if(currentTab==='calendar')renderCalendar();}
+function saveCookAgain(){if(!cookAgainId)return;var d=dishes.find(function(x){return x.id===cookAgainId;});if(!d)return;d.ingredients=getListValues('cookIngredientsList');d.steps=getListValues('cookStepsList');d.cookLog.push({id:crypto.randomUUID(),date:document.getElementById('cookDate').value,photo:cookAgainPhoto,notes:document.getElementById('cookNotes').value.trim()});delete preparedShareFiles[cookAgainId];saveDishesLS();closeOverlay('cookFormOverlay');renderDishes();if(currentTab==='calendar')renderCalendar();}
 
 // Photo (main form)
 function handlePhoto(input){var file=input.files[0];if(!file)return;var reader=new FileReader();reader.onload=function(e){var img=new Image();img.onload=function(){var c=document.createElement('canvas');var MAX=800;var w=img.width,h=img.height;if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);currentPhoto=c.toDataURL('image/jpeg',.75);renderPhotoPreview();};img.src=e.target.result;};reader.readAsDataURL(file);}
@@ -364,8 +369,8 @@ function removePhoto(){currentPhoto=null;document.getElementById('photoInput').v
 // Modal
 function openAddModal(){editingId=null;currentPhoto=null;document.getElementById('modalTitle').textContent='New Dish';document.getElementById('dishName').value='';document.getElementById('dishType').value='';document.getElementById('dishCategory').value='';document.getElementById('dishDate').value=todayStr();document.getElementById('dishNotes').value='';document.getElementById('deleteBtn').style.display='none';document.getElementById('saveBtn').textContent='Save Dish';document.getElementById('photoInput').value='';document.querySelectorAll('.cook-only').forEach(function(el){el.style.display='';});populateIngredients([]);populateSteps([]);renderPhotoPreview();openOverlay('modalOverlay');}
 function openEditModal(id){var d=dishes.find(function(x){return x.id===id;});if(!d)return;editingId=id;currentPhoto=null;document.getElementById('modalTitle').textContent='Edit Recipe';document.getElementById('dishName').value=d.name;document.getElementById('dishType').value=d.type;document.getElementById('dishCategory').value=d.category||'';document.getElementById('deleteBtn').style.display='block';document.getElementById('saveBtn').textContent='Update Recipe';document.querySelectorAll('.cook-only').forEach(function(el){el.style.display='none';});populateIngredients(d.ingredients||[]);populateSteps(d.steps||[]);openOverlay('modalOverlay');}
-function saveDish(){var name=document.getElementById('dishName').value.trim();var type=document.getElementById('dishType').value;var category=document.getElementById('dishCategory').value;var date=document.getElementById('dishDate').value;var ingredients=getIngredients();var steps=getSteps();var notes=document.getElementById('dishNotes').value.trim();if(!name){document.getElementById('dishName').focus();return;}if(editingId){var d=dishes.find(function(x){return x.id===editingId;});if(d){d.name=name;d.type=type;d.category=category;d.ingredients=ingredients;d.steps=steps;}}else{dishes.push({id:crypto.randomUUID(),name:name,type:type,category:category,ingredients:ingredients,steps:steps,cookLog:[{id:crypto.randomUUID(),date:date,photo:currentPhoto,notes:notes}],created:Date.now()});}saveDishesLS();closeOverlay('modalOverlay');closeDetail();renderDishes();if(currentTab==='calendar')renderCalendar();}
-function deleteDish(){if(!editingId||!confirm('Delete this dish and all its cook history?'))return;dishes=dishes.filter(function(d){return d.id!==editingId;});saveDishesLS();closeOverlay('modalOverlay');closeDetail();renderDishes();if(currentTab==='calendar')renderCalendar();}
+function saveDish(){var name=document.getElementById('dishName').value.trim();var type=document.getElementById('dishType').value;var category=document.getElementById('dishCategory').value;var date=document.getElementById('dishDate').value;var ingredients=getIngredients();var steps=getSteps();var notes=document.getElementById('dishNotes').value.trim();if(!name){document.getElementById('dishName').focus();return;}if(editingId){var d=dishes.find(function(x){return x.id===editingId;});if(d){d.name=name;d.type=type;d.category=category;d.ingredients=ingredients;d.steps=steps;}delete preparedShareFiles[editingId];}else{dishes.push({id:crypto.randomUUID(),name:name,type:type,category:category,ingredients:ingredients,steps:steps,cookLog:[{id:crypto.randomUUID(),date:date,photo:currentPhoto,notes:notes}],created:Date.now()});}saveDishesLS();closeOverlay('modalOverlay');closeDetail();renderDishes();if(currentTab==='calendar')renderCalendar();}
+function deleteDish(){if(!editingId||!confirm('Delete this dish and all its cook history?'))return;dishes=dishes.filter(function(d){return d.id!==editingId;});delete preparedShareFiles[editingId];saveDishesLS();closeOverlay('modalOverlay');closeDetail();renderDishes();if(currentTab==='calendar')renderCalendar();}
 
 // Dishes View
 function setFilterMode(m){filterMode=m;activeFilter='All';document.getElementById('filterToggle').querySelectorAll('button').forEach(function(b){b.classList.toggle('active',b.textContent.toLowerCase()===m);});renderDishes();}
@@ -388,23 +393,329 @@ function clearSearch(){document.getElementById('searchInput').value='';document.
 
 // Detail
 function openDetail(id){var d=dishes.find(function(x){return x.id===id;});if(!d)return;var ph=latestPhoto(d);var hasIng=d.ingredients&&d.ingredients.length;var hasSteps=d.steps&&d.steps.length;var cooksSorted=d.cookLog.slice().sort(function(a,b){return(b.date||'').localeCompare(a.date||'');});
-var b=(ph?'<img class="detail-hero" src="'+ph+'">':'<div class="detail-hero-placeholder">'+typeEmoji(d.type)+'</div>')+'<div class="detail-body"><div class="detail-tags">'+(d.type?'<span class="dtag dtag-meal">'+d.type+'</span>':'')+(d.category?'<span class="dtag dtag-cat">'+d.category+'</span>':'')+'</div><div class="dish-name">'+escHtml(d.name)+'</div><div class="dish-meta">Cooked '+d.cookLog.length+' time'+(d.cookLog.length!==1?'s':'')+(latestDate(d)?' \u00b7 Last on '+formatDate(latestDate(d)):'')+'</div>';
+var b=(ph?'<img class="detail-hero" src="'+ph+'">':'<div class="detail-hero-placeholder">'+typeEmoji(d.type)+'</div>')+'<div class="detail-body"><div class="detail-tags">'+(d.type?'<span class="dtag dtag-meal">'+d.type+'</span>':'')+(d.category?'<span class="dtag dtag-cat">'+d.category+'</span>':'')+'</div><div class="dish-name">'+escHtml(d.name)+'</div><div class="dish-meta">Cooked '+d.cookLog.length+' time'+(d.cookLog.length!==1?'s':'')+(latestDate(d)?' \u00b7 Last on '+formatDate(latestDate(d)):'')+'</div><div class="share-row"><button class="share-btn" onclick="shareAsText(\''+d.id+'\')"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Share as Text</button><button class="share-btn" onclick="shareAsImage(\''+d.id+'\')"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>Share as Image</button></div>';
 if(hasIng)b+='<div class="section-heading">Ingredients</div><ul class="detail-ingredients">'+d.ingredients.map(function(i){return'<li>'+escHtml(i)+'</li>';}).join('')+'</ul>';
 if(hasSteps)b+='<div class="section-heading">Steps</div><ol class="detail-steps">'+d.steps.map(function(s){return'<li><span>'+escHtml(s)+'</span></li>';}).join('')+'</ol>';
 if(!hasIng&&!hasSteps)b+='<div class="no-recipe">No recipe added yet</div>';
 b+='<div class="cook-log"><div class="section-heading">Cook Log</div>';
 b+=cooksSorted.map(function(c){var preview=c.notes?c.notes.substring(0,50)+(c.notes.length>50?'…':''):'No notes';return'<div class="cook-log-row" onclick="event.stopPropagation();openCookDetail(\''+c.id+'\',\''+d.id+'\')">'+(c.photo?'<img class="clr-thumb" src="'+c.photo+'">':'<div class="clr-thumb-empty">&#x1F4F7;</div>')+'<div class="clr-info"><div class="clr-date">'+(c.date?formatDate(c.date):'No date')+'</div><div class="clr-preview">'+escHtml(preview)+'</div></div><div class="clr-arrow">&#8250;</div></div>';}).join('');
 b+='</div></div>';
-document.getElementById('detailContent').innerHTML=b;document.getElementById('detailView').scrollTop=0;document.getElementById('detailEditBtn').onclick=function(){closeDetail();setTimeout(function(){openEditModal(id);},100);};document.getElementById('detailView').classList.add('open');}
+document.getElementById('detailContent').innerHTML=b;document.getElementById('detailView').scrollTop=0;document.getElementById('detailEditBtn').onclick=function(){closeDetail();setTimeout(function(){openEditModal(id);},100);};document.getElementById('detailView').classList.add('open');
+// Pre-generate share image so iOS user gesture is preserved on tap
+prepareShareImage(d);}
 function openCookDetail(cookId,dishId){var d=dishes.find(function(x){return x.id===dishId;});if(!d)return;var c=d.cookLog.find(function(x){return x.id===cookId;});if(!c)return;var h='<div class="cook-detail-date">'+(c.date?formatDate(c.date):'No date')+'</div>';if(c.photo)h+='<img class="cook-detail-photo" src="'+c.photo+'">';if(c.notes){h+='<div class="cook-detail-notes-label">Notes</div><div class="cook-detail-notes">'+escHtml(c.notes)+'</div>';}if(!c.photo&&!c.notes)h+='<div class="cook-detail-empty">No photo or notes for this cook</div>';document.getElementById('cookDetailContent').innerHTML=h;openOverlay('cookDetailOverlay');}
 function closeDetail(){document.getElementById('detailView').classList.remove('open');}
 
+// ─── Sharing ───
+function toBoldUnicode(text){
+  // Convert ASCII letters to bold unicode (works in Messages, Mail, etc.)
+  var out='';
+  for(var i=0;i<text.length;i++){
+    var c=text.charCodeAt(i);
+    if(c>=65&&c<=90)out+=String.fromCodePoint(0x1D400+(c-65));
+    else if(c>=97&&c<=122)out+=String.fromCodePoint(0x1D41A+(c-97));
+    else if(c>=48&&c<=57)out+=String.fromCodePoint(0x1D7CE+(c-48));
+    else out+=text[i];
+  }
+  return out;
+}
+
+function buildShareText(d){
+  var lines=[];
+  lines.push(toBoldUnicode(d.name));
+  var tags=[];
+  if(d.type)tags.push(d.type);
+  if(d.category)tags.push(d.category);
+  if(tags.length)lines.push(tags.join(' \u00b7 '));
+  lines.push('');
+  if(d.ingredients&&d.ingredients.length){
+    lines.push(toBoldUnicode('Ingredients'));
+    d.ingredients.forEach(function(i){lines.push('\u2022 '+i);});
+    lines.push('');
+  }
+  if(d.steps&&d.steps.length){
+    lines.push(toBoldUnicode('Steps'));
+    d.steps.forEach(function(s,idx){lines.push((idx+1)+'. '+s);});
+    lines.push('');
+  }
+  lines.push('\u2014 From Dom\u2019s Cookbook');
+  return lines.join('\n');
+}
+
+function shareAsText(dishId){
+  var d=dishes.find(function(x){return x.id===dishId;});
+  if(!d)return;
+  var text=buildShareText(d);
+  if(navigator.share){
+    navigator.share({title:d.name,text:text}).catch(function(){
+      navigator.clipboard&&navigator.clipboard.writeText(text);
+    });
+  }else if(navigator.clipboard){
+    navigator.clipboard.writeText(text).then(function(){alert('Recipe copied to clipboard!');});
+  }else{
+    prompt('Copy this recipe:',text);
+  }
+}
+
+function shareAsImage(dishId){
+  var d=dishes.find(function(x){return x.id===dishId;});
+  if(!d)return;
+  var file=preparedShareFiles[dishId];
+  if(file&&navigator.canShare&&navigator.canShare({files:[file]})){
+    navigator.share({files:[file],title:d.name}).catch(function(){});
+  }else if(file){
+    // Fallback: download
+    triggerDownload(file);
+  }else{
+    // Image not ready yet — generate then download (share would fail without user gesture)
+    alert('Preparing recipe card… it will download in a moment.');
+    generateRecipeCard(d,function(f){
+      preparedShareFiles[dishId]=f;
+      triggerDownload(f);
+    });
+  }
+}
+
+function triggerDownload(file){
+  var url=URL.createObjectURL(file);
+  var a=document.createElement('a');
+  a.href=url;a.download=file.name;
+  document.body.appendChild(a);a.click();
+  setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},100);
+}
+
+function prepareShareImage(d){
+  // Generate share image in background so it's ready for instant share
+  if(preparedShareFiles[d.id])return;
+  generateRecipeCard(d,function(f){preparedShareFiles[d.id]=f;});
+}
+
+function generateRecipeCard(d,callback){
+  // Wait for custom fonts to load so measurements are accurate
+  var fontReady=document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve();
+  fontReady.then(function(){
+    actuallyGenerate(d,callback);
+  });
+}
+
+function actuallyGenerate(d,callback){
+  // Two-pass: measure all heights first, then size canvas, then draw
+  var W=900;
+  var photoH=400; // ~32% of typical 1200 card; fixed visual budget
+  var sidePad=60;
+  var contentW=W-2*sidePad;
+
+  // Measurement context (off-screen, just for measureText)
+  var measCanvas=document.createElement('canvas');
+  var mctx=measCanvas.getContext('2d');
+
+  // Measure title
+  mctx.font='700 48px Playfair Display,Georgia,serif';
+  var titleLines=wrapText(mctx,d.name,W-80);
+
+  // Measure ingredients
+  mctx.font='300 19px DM Sans,-apple-system,sans-serif';
+  var ingLines=[]; // array of {text, indent}
+  if(d.ingredients&&d.ingredients.length){
+    d.ingredients.forEach(function(ing){
+      var lines=wrapText(mctx,'\u2022  '+ing,contentW);
+      lines.forEach(function(line,i){ingLines.push({text:line,indent:i>0?22:0});});
+    });
+  }
+
+  // Measure steps
+  var stepLines=[];
+  if(d.steps&&d.steps.length){
+    d.steps.forEach(function(step,i){
+      var prefix=(i+1)+'.  ';
+      var lines=wrapText(mctx,prefix+step,contentW);
+      lines.forEach(function(line,j){stepLines.push({text:line,indent:j>0?28:0});});
+    });
+  }
+
+  // Calculate total height needed
+  var topPad=photoH+50;        // photo + space to tags
+  var tagsH=28;                // tag pill height
+  var titleGap=34;             // gap after tags
+  var titleH=titleLines.length*56;
+  var afterTitleGap=30;
+  var sectionH=28+14;          // section heading + gap (14 for between sections)
+  var lineH=28;
+  var footerH=110;             // divider + signature
+
+  var ingTotalH=ingLines.length?(28+ingLines.length*lineH+14):0;
+  var stepTotalH=stepLines.length?(28+stepLines.length*lineH):0;
+  var contentH=ingTotalH+stepTotalH;
+
+  var H=topPad+tagsH+titleGap+titleH+afterTitleGap+contentH+footerH+20;
+  // Enforce a minimum height for short recipes
+  if(H<1200)H=1200;
+
+  // Now build the real canvas
+  var canvas=document.createElement('canvas');
+  canvas.width=W;canvas.height=H;
+  var ctx=canvas.getContext('2d');
+
+  // Background
+  ctx.fillStyle='#FFFFFF';
+  ctx.fillRect(0,0,W,H);
+
+  var photo=latestPhoto(d);
+
+  function drawCardContent(){
+    // Tags
+    var tagY=photoH+50;
+    ctx.font='600 16px DM Sans,-apple-system,sans-serif';
+    ctx.textBaseline='middle';
+    var tags=[];
+    if(d.type)tags.push({text:d.type.toUpperCase(),color:'#C4623A',bg:'rgba(196,98,58,0.08)'});
+    if(d.category)tags.push({text:d.category.toUpperCase(),color:'#5a7a64',bg:'rgba(90,122,100,0.08)'});
+    var totalTagW=0;tags.forEach(function(t){totalTagW+=ctx.measureText(t.text).width+32;});
+    if(tags.length>1)totalTagW+=10;
+    var tx=(W-totalTagW)/2;
+    tags.forEach(function(t,i){
+      var tw=ctx.measureText(t.text).width+32;
+      ctx.fillStyle=t.bg;
+      roundRect(ctx,tx,tagY-14,tw,28,8);
+      ctx.fill();
+      ctx.fillStyle=t.color;
+      ctx.textAlign='center';
+      ctx.fillText(t.text,tx+tw/2,tagY+1);
+      tx+=tw+10;
+    });
+
+    // Title
+    ctx.fillStyle='#1a1612';
+    ctx.font='700 48px Playfair Display,Georgia,serif';
+    ctx.textAlign='center';
+    ctx.textBaseline='top';
+    var titleY=tagY+34;
+    titleLines.forEach(function(line,i){
+      ctx.fillText(line,W/2,titleY+i*56);
+    });
+    var contentY=titleY+titleH+30;
+
+    // Ingredients (already wrapped)
+    if(ingLines.length){
+      ctx.fillStyle='#8a7e74';
+      ctx.font='600 14px DM Sans,-apple-system,sans-serif';
+      ctx.textAlign='left';
+      ctx.textBaseline='top';
+      ctx.fillText('INGREDIENTS',sidePad,contentY);
+      contentY+=28;
+      ctx.fillStyle='#1a1612';
+      ctx.font='300 19px DM Sans,-apple-system,sans-serif';
+      ingLines.forEach(function(ln){
+        ctx.fillText(ln.text,sidePad+ln.indent,contentY);
+        contentY+=lineH;
+      });
+      contentY+=14;
+    }
+
+    // Steps (already wrapped)
+    if(stepLines.length){
+      ctx.fillStyle='#8a7e74';
+      ctx.font='600 14px DM Sans,-apple-system,sans-serif';
+      ctx.fillText('STEPS',sidePad,contentY);
+      contentY+=28;
+      ctx.fillStyle='#1a1612';
+      ctx.font='300 19px DM Sans,-apple-system,sans-serif';
+      stepLines.forEach(function(ln){
+        ctx.fillText(ln.text,sidePad+ln.indent,contentY);
+        contentY+=lineH;
+      });
+    }
+
+    // Footer divider + signature (always near bottom)
+    ctx.strokeStyle='#E8E0D8';
+    ctx.lineWidth=1;
+    ctx.beginPath();
+    ctx.moveTo(sidePad,H-90);
+    ctx.lineTo(W-sidePad,H-90);
+    ctx.stroke();
+    ctx.fillStyle='#8a7e74';
+    ctx.font='400 18px Playfair Display,Georgia,serif';
+    ctx.textAlign='center';
+    ctx.fillText('From Dom\u2019s Cookbook',W/2,H-66);
+
+    // Convert and pass to callback
+    canvas.toBlob(function(blob){
+      var file=new File([blob],d.name.replace(/[^a-z0-9]/gi,'_')+'.png',{type:'image/png'});
+      if(callback)callback(file);
+    },'image/png',0.92);
+  }
+
+  // Draw photo or placeholder, then content
+  if(photo){
+    var img=new Image();
+    img.onload=function(){
+      var ratio=img.width/img.height;
+      var sx,sy,sw,sh;
+      var targetRatio=W/photoH;
+      if(ratio>targetRatio){
+        sh=img.height;sw=img.height*targetRatio;
+        sx=(img.width-sw)/2;sy=0;
+      }else{
+        sw=img.width;sh=img.width/targetRatio;
+        sx=0;sy=(img.height-sh)/2;
+      }
+      ctx.drawImage(img,sx,sy,sw,sh,0,0,W,photoH);
+      drawCardContent();
+    };
+    img.onerror=function(){drawPlaceholder();drawCardContent();};
+    img.src=photo;
+  }else{
+    drawPlaceholder();
+    drawCardContent();
+  }
+
+  function drawPlaceholder(){
+    var grad=ctx.createLinearGradient(0,0,W,photoH);
+    grad.addColorStop(0,'#E8DDD4');
+    grad.addColorStop(1,'#f0e6dc');
+    ctx.fillStyle=grad;
+    ctx.fillRect(0,0,W,photoH);
+    ctx.font='200px -apple-system,sans-serif';
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
+    ctx.globalAlpha=0.4;
+    ctx.fillText(typeEmoji(d.type),W/2,photoH/2);
+    ctx.globalAlpha=1;
+  }
+}
+
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+
+function wrapText(ctx,text,maxW){
+  if(!text)return [''];
+  var words=text.split(' ');
+  var lines=[];
+  var current='';
+  for(var i=0;i<words.length;i++){
+    var test=current?current+' '+words[i]:words[i];
+    if(ctx.measureText(test).width>maxW&&current){
+      lines.push(current);
+      current=words[i];
+    }else{
+      current=test;
+    }
+  }
+  if(current)lines.push(current);
+  return lines.length?lines:[''];
+}
+
 // Init
 loadDishes();
-var RECIPE_VERSION='v3_meats_category';
-if(!dishes.length||localStorage.getItem('cookbook_version')!==RECIPE_VERSION){
+if(!dishes.length){
   dishes=[];
-  localStorage.removeItem(STORAGE_KEY);
   dishes=[
     {id:crypto.randomUUID(),name:"Apple Pie Baked in a Bag",type:"Dessert",category:"Baked Goods",ingredients:["2 cups all-purpose flour", "1/4 cup sugar", "Pinch salt", "1 cup cold unsalted butter (2 sticks)", "1/3 cup ice water", "5 Granny Smith apples, peeled, cored, thickly sliced", "1/2 cup sugar", "1 1/2 tbsp cornstarch", "1 tsp fresh lemon juice", "1 tsp vanilla extract", "1/4 tsp ground cinnamon", "1/8 tsp salt", "1/8 tsp ground nutmeg", "1 1/2 tbsp cold unsalted butter"],steps:["Make crust: pulse flour, sugar, salt, butter in food processor. Add water, form 2 disks, refrigerate overnight", "Roll out 1 disk, line 9-inch pie pan. Roll second disk for top, chill", "Preheat oven to 375°F", "Toss apples with sugar, cornstarch, lemon juice, vanilla, cinnamon, salt, nutmeg", "Fill pie, dot with butter, cover with top crust", "Place pie in brown paper bag, fold end closed", "Bake 1 hr 45 min, cut circle in bag top to brown crust at end"],cookLog:[{id:crypto.randomUUID(),date:"2026-01-01",photo:null,notes:""}],created:Date.now()},
     {id:crypto.randomUUID(),name:"Asparagus Spinach & Feta Quiche",type:"Dinner",category:"Eggs",ingredients:["1/2 tbsp olive oil", "8 asparagus spears, cut into 1-inch pieces", "4 cups fresh baby spinach", "5 large eggs", "1 cup milk", "1/4 cup crumbled feta cheese", "1/4 cup shredded mozzarella", "Salt and pepper", "4 green onions, chopped", "1 9-inch pie crust"],steps:["Preheat oven to 375°F. Line pie plate with dough, freeze while prepping", "Sauté asparagus and spinach until wilted, squeeze out liquid", "Whisk eggs and milk, stir in feta and mozzarella, season", "Place veggies and green onions in crust, pour egg mixture over", "Bake 45 minutes until set and golden. Let stand 15 min before serving"],cookLog:[{id:crypto.randomUUID(),date:"2026-01-01",photo:null,notes:""}],created:Date.now()},
@@ -465,7 +776,6 @@ if(!dishes.length||localStorage.getItem('cookbook_version')!==RECIPE_VERSION){
     {id:crypto.randomUUID(),name:"Dominic's Cinnamon Sugar",type:"Sauce",category:"Other",ingredients:["3 tbsp sugar", "1 tsp cinnamon"],steps:["Mix sugar and cinnamon together", "Use as topping"],cookLog:[{id:crypto.randomUUID(),date:"2026-01-01",photo:null,notes:""}],created:Date.now()}
   ];
   saveDishesLS();
-  localStorage.setItem('cookbook_version',RECIPE_VERSION);
 }
 renderDishes();renderCalendar();
 </script>
